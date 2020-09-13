@@ -8,10 +8,10 @@ import org.springframework.data.r2dbc.core.DatabaseClient
 import org.springframework.data.r2dbc.core.DefaultReactiveDataAccessStrategy
 import org.springframework.data.r2dbc.dialect.PostgresDialect
 
-@Configuration
+
 class DbConfig {
 
-    @Bean
+
     fun connectionFactory() = PostgresqlConnectionFactory(
             PostgresqlConnectionConfiguration
                     .builder()
@@ -24,10 +24,10 @@ class DbConfig {
                     .build()
     )
 
-    @Bean
+
     fun r2dbcDatabaseClient(connectionFactory: PostgresqlConnectionFactory) = DatabaseClient.create(connectionFactory)
 
-    @Bean
+
     fun reactiveDataAccessStrategy() = DefaultReactiveDataAccessStrategy(PostgresDialect())
 
 

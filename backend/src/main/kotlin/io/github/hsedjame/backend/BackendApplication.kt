@@ -1,49 +1,84 @@
 package io.github.hsedjame.backend
 
-import io.github.hsedjame.backend.model.User
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory
 import io.github.hsedjame.backend.repository.UserRepository
-import kotlinx.coroutines.runBlocking
-import org.springframework.boot.CommandLineRunner
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
-import org.springframework.context.annotation.Bean
-import org.springframework.data.r2dbc.core.DatabaseClient
-import org.springframework.data.r2dbc.core.awaitRowsUpdated
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
+import io.github.hsedjame.backend.web.MessageHandler
+import io.github.hsedjame.backend.web.UserHandler
+import io.github.hsedjame.backend.web.ViewHandler
+import io.github.hsedjame.backend.web.routes
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.fu.kofu.configuration
+import org.springframework.fu.kofu.r2dbc.r2dbc
+import org.springframework.fu.kofu.reactiveWebApplication
+import org.springframework.fu.kofu.webflux.mustache
+import org.springframework.fu.kofu.webflux.webFlux
+import org.springframework.http.MediaType
+import org.springframework.http.codec.cbor.Jackson2CborDecoder
+import org.springframework.http.codec.cbor.Jackson2CborEncoder
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import org.springframework.messaging.rsocket.RSocketRequester
+import kotlin.coroutines.coroutineContext
 
-const val sql = "CREATE TABLE IF NOT EXISTS users( id BIGINT PRIMARY KEY GENERATED ALWAYS AS  IDENTITY NOT NULL , login VARCHAR , firstname VARCHAR , lastname VARCHAR)"
 
-@SpringBootApplication
-class BackendApplication {
+val dataConfig = configuration {
+	beans {
+		bean<UserRepository>()
+	}
 
-	@Bean
-	fun run(operator: TransactionalOperator,
-			client: DatabaseClient,
-			userRepository: UserRepository)  = CommandLineRunner {
+	listener<ApplicationReadyEvent> {
+		ref<UserRepository>().init()
+	}
 
-		args ->  runBlocking {
-			operator.executeAndAwait {
-				client.execute(sql).fetch().awaitRowsUpdated()
+	r2dbc {
+		url = "r2dbc:postgresql://localhost:5432/spring-messenger"
+		username = "postgres"
+		password = "postgres"
+	}
 
-				userRepository.deleteAll()
+}
 
-				userRepository.save(User(id = null).apply {
-					login = "clenain"
-					firstname = "chloe"
-					lastname = "LE NAIN"
-				})
-				userRepository.save(User(id = null).apply {
-					login = "llenain"
-					firstname = "lea"
-					lastname = "LE NAIN"
-				})
+val webConfig = configuration {
+	beans {
+		bean(::routes)
+		bean<UserHandler>()
+		bean<MessageHandler>()
+		bean<ViewHandler>()
+	}
+	webFlux {
+		codecs {
+			resource()
+			string()
 
+			jackson{
+				indentOutput = true
 			}
 		}
+		mustache()
 	}
 }
 
+val rsocketConfig = configuration {
+	beans {
+		bean { RSocketRequester.builder().rsocketStrategies {
+
+			val objectMapper: ObjectMapper = ref<Jackson2ObjectMapperBuilder>()
+					.createXmlMapper(false)
+					.factory(CBORFactory())
+					.build()
+
+			it.decoder(Jackson2CborDecoder(objectMapper, MediaType.APPLICATION_CBOR))
+			it.encoder(Jackson2CborEncoder(objectMapper, MediaType.APPLICATION_CBOR))
+		} }
+	}
+}
+
+val app = reactiveWebApplication {
+	enable(dataConfig)
+	enable(webConfig)
+	enable(rsocketConfig)
+}
+
 fun main(args: Array<String>) {
-	runApplication<BackendApplication>(*args)
+	app.run(args)
 }

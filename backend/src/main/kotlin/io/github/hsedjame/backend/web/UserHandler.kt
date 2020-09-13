@@ -3,10 +3,10 @@ package io.github.hsedjame.backend.web
 import io.github.hsedjame.backend.model.User
 import io.github.hsedjame.backend.repository.UserRepository
 import org.springframework.http.HttpStatus
-import org.springframework.stereotype.Component
+
 import org.springframework.web.reactive.function.server.*
 
-@Component
+
 class UserHandler(private val userRepository: UserRepository) {
 
     suspend fun findAll(serverRequest: ServerRequest) = ServerResponse.ok().bodyAndAwait(userRepository.findAll())
@@ -17,6 +17,6 @@ class UserHandler(private val userRepository: UserRepository) {
     suspend fun deleteByLogin(serverRequest: ServerRequest) = userRepository.findByLogin(serverRequest.pathVariable("login"))
             .let { ServerResponse.ok().buildAndAwait() }
 
-    suspend fun create(serverRequest: ServerRequest) = userRepository.save(serverRequest.awaitBody<User>())
+    suspend fun create(serverRequest: ServerRequest) = userRepository.create(serverRequest.awaitBody<User>())
             .let { ServerResponse.status(HttpStatus.CREATED).buildAndAwait() }
 }

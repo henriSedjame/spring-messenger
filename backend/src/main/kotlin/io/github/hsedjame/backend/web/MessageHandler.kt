@@ -15,7 +15,7 @@ import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.*
 import reactor.core.publisher.ReplayProcessor
 
-@Component("webfluxMessageHandler")
+
 class MessageHandler(private val requesterBuilder: RSocketRequester.Builder) {
 
     private val processor = ReplayProcessor.create<Message>()
