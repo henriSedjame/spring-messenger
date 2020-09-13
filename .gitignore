@@ -1,0 +1,8 @@
+# Project exclude paths
+/.gradle/
+/build/
+/build/js/packages/spring-messenger-frontend/kotlin/
+/build/js/packages/spring-messenger-shared/kotlin/
+/frontend/build/
+/shared/build/
+/shared/build/classes/kotlin/jvm/main/
