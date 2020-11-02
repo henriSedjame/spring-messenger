@@ -7,6 +7,7 @@ import io.github.hsedjame.backend.web.MessageHandler
 import io.github.hsedjame.backend.web.UserHandler
 import io.github.hsedjame.backend.web.ViewHandler
 import io.github.hsedjame.backend.web.routes
+import kotlinx.coroutines.FlowPreview
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.fu.kofu.configuration
 import org.springframework.fu.kofu.r2dbc.r2dbc
@@ -38,6 +39,7 @@ val dataConfig = configuration {
 
 }
 
+@FlowPreview
 val webConfig = configuration {
 	beans {
 		bean(::routes)
